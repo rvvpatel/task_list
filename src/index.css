@@ -20,4 +20,9 @@ code {
   width: 800px;
   border: 1px solid lightgray;
   margin-bottom: 10px !important;
+  border-radius: 10px;
+  }
+
+  .todo__list li{
+    cursor: grab;
   }

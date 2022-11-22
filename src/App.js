@@ -3,7 +3,6 @@ import { TextField, Button } from '@mui/material';
 import Todo from './components/Todo';
 import { db } from './firebase.js';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, deleteDoc } from 'firebase/firestore';
-import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
@@ -16,59 +15,41 @@ import "react-client-captcha/dist/index.css";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+import { ReactSortable } from "react-sortablejs";
+
 import './App.css';
-const q = query(collection(db, 'todos'), orderBy('timestamp', 'desc'));
-
-const reorder = (list, startIndex, endIndex) => {
-  const result = Array.from(list);
-  const [removed] = result.splice(startIndex, 1);
-  result.splice(endIndex, 0, removed);
-
-  return result;
-};
-
-
-const QuoteList = React.memo(function QuoteList({ quotes, deleteTodo }) {
-  return quotes.map((quote, index) => (
-    <Draggable draggableId={quote.id} index={index} key={index}>
-      {provided => (
-        <>
-          <ul ref={provided.innerRef}
-            {...provided.draggableProps}
-            {...provided.dragHandleProps}>
-            <Todo arr={quote} deleteTodo={deleteTodo} />
-          </ul>
-        </>
-      )}
-    </Draggable>
-  ));
-});
-
+const q = query(collection(db, 'todos'), orderBy('timestamp', 'asc'));
 
 function App() {
-  const [state, setState] = useState({ todos: [] });
+  const [tempItem, setTempItem] = useState([]);
   const [input, setInput] = useState('');
   const [taskId, setTaskId] = useState();
   const [captchaCode, setCaptchaCode] = useState('');
   const [inputCode, setInputCode] = useState('');
+  const [tasks, setTasks] = useState([]);
 
   useEffect(() => {
     onSnapshot(q, (snapshot) => {
-      setState({
-        todos: snapshot.docs.map(doc => ({
-          id: doc.id,
-          item: doc.data()
-        }))
-      })
+
+      setTasks(snapshot.docs.map(doc => ({
+        id: doc.id,
+        item: doc.data()
+      }))
+      )
+      setTempItem(snapshot.docs.map(doc => ({
+        id: doc.id,
+        item: doc.data()
+      }))
+      )
     })
   }, []);
+
   const addTodo = (e) => {
     e.preventDefault();
-
     let result = input.trim();
     if (result) {
       addDoc(collection(db, 'todos'), {
-        todo: input,
+        name: input,
         timestamp: serverTimestamp()
       })
       setInput('')
@@ -77,23 +58,6 @@ function App() {
       toast.error('Please enter task');
     }
   };
-
-  function onDragEnd(result) {
-    if (!result.destination) {
-      return;
-    }
-
-    if (result.destination.index === result.source.index) {
-      return;
-    }
-
-    const todos = reorder(
-      state.todos,
-      result.source.index,
-      result.destination.index
-    );
-    setState({ todos });
-  }
 
   const [open, setOpen] = React.useState(false);
 
@@ -130,17 +94,15 @@ function App() {
   return (
     <div className="App">
       <ToastContainer />
+
       <h2> THINGS TO DO:</h2>
-      <DragDropContext onDragEnd={onDragEnd}>
-        <Droppable droppableId="list">
-          {provided => (
-            <div ref={provided.innerRef} {...provided.droppableProps}>
-              <QuoteList quotes={state?.todos} deleteTodo={deleteTodo} />
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>
+      <ReactSortable list={tasks} setList={setTasks}>
+        {tasks.map((item) => (
+          <div key={item.id}>
+            <Todo arr={item} deleteTodo={deleteTodo} />
+          </div>
+        ))}
+      </ReactSortable>
       <form onSubmit={addTodo}>
         <TextField id="outlined-basic" label="Task" variant="outlined" style={{ margin: "0px 5px" }} size="small" value={input}
           onChange={e => setInput(e.target.value)} />

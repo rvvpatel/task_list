@@ -6,7 +6,7 @@ const Todo = ({ arr, deleteTodo }) => {
         <List className="todo__list">
             <ListItem>
                 <Checkbox />
-                <ListItemText primary={arr.item.todo} />
+                <ListItemText primary={arr.item.name} />
             </ListItem>
             <ClearIcon fontSize="large" style={{ opacity: 0.7 }} onClick={() => deleteTodo(arr.id)} />
         </List>
